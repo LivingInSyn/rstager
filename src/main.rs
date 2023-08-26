@@ -8,7 +8,7 @@ use std::io::prelude::*;
 use named_lock::NamedLock;
 use rand::{distributions::Alphanumeric, Rng};
 
-const URL: &str = "URL_REPLACE_ME/test.woff";
+const URL: &str = "https://URL_REPLACE_ME/test.woff";
 
 const AESKEY: &str = "AES_KEY_REPLACE_ME";
 const AESIV: &str  = "AES_IV_REPLACE_ME";
