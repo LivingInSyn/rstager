@@ -18,4 +18,4 @@ ifeq ($(DOS), Darwin)
 	gsed -i 's/RLOCK/${MUTEX_NAME}/g' src/main.rs
 endif
 	cargo +nightly build -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort --target=aarch64-apple-darwin --release
-	git restore ./src/main.rs
+	# git restore ./src/main.rs

