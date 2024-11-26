@@ -26,7 +26,7 @@ fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
         iv[i] = *b;
     }
     let mut buf: Vec<u8> = Vec::with_capacity(size);
-    let _pt = Aes256CbcDec::new(&key.into(), &iv.into())
+    let _pt = Aes128CbcDec::new(&key.into(), &iv.into())
         .decrypt_padded_b2b_mut::<Pkcs7>(&data, &mut buf)
         .unwrap();
     return buf;
