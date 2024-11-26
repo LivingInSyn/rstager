@@ -16,22 +16,6 @@ const AESIV: &str  = "lbzPx4uGUpAx7Wap";
 
 const LOCKNAME: &str = "RLOCK";
 
-// fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
-//     let mut key = [0x42; 16];
-//     let mut iv = [0x24; 16];
-//     for (i, b) in obfstr::obfstr!(AESKEY).as_bytes().iter().enumerate() {
-//         key[i] = *b;
-//     }
-//     for (i, b) in obfstr::obfstr!(AESIV).as_bytes().iter().enumerate() {
-//         iv[i] = *b;
-//     }
-//     let mut buf: Vec<u8> = Vec::with_capacity(size);
-//     let _pt = Aes128CbcDec::new(&key.into(), &iv.into())
-//         .decrypt_padded_b2b_mut::<Pkcs7>(&data, &mut buf)
-//         .unwrap();
-//     return buf;
-// }
-
 fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, symmetriccipher::SymmetricCipherError> {
     let mut key = [0x42; 16];
     let mut iv = [0x24; 16];
