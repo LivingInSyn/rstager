@@ -7,9 +7,9 @@ use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
 use named_lock::NamedLock;
 use named_lock::Result;
 
-type Aes256CbcDec = cbc::Decryptor<aes::Aes128>;
+type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 
-const URL: &str = "http://192.168.78.129:8080/test.woff";
+const URL: &str = "http://192.168.68.73:8080/test.woff";
 
 const AESKEY: &str = "oPqVTb-ieogwPT94";
 const AESIV: &str  = "lbzPx4uGUpAx7Wap";
