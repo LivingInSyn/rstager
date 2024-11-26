@@ -9,12 +9,12 @@ use named_lock::Result;
 use crypto::{ symmetriccipher, buffer, aes, blockmodes };
 use crypto::buffer::{ ReadBuffer, WriteBuffer, BufferResult };
 
-const URL: &str = "http://192.168.68.73:8080/test.woff";
+const URL: &str = "http://URL_REPLACE_ME/test.woff";
 
-const AESKEY: &str = "oPqVTb-ieogwPT94";
-const AESIV: &str  = "lbzPx4uGUpAx7Wap";
+const AESKEY: &str = "AES_KEY";
+const AESIV: &str  = "AES_IV";
 
-const LOCKNAME: &str = "RLOCK";
+const LOCKNAME: &str = "MUTEX_NAME";
 
 fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, symmetriccipher::SymmetricCipherError> {
     let mut key = [0x42; 16];
